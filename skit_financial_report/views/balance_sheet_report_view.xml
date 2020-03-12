@@ -46,7 +46,7 @@
 				your needs.</field>
 		</record>
 		
-		<menuitem name="Balance Sheet" action="action_balance_sheet_report_all"
+		<menuitem name="Balance General" action="action_balance_sheet_report_all"
 			id="menu_action_balance_sheet_report_all" parent="account_reports_business_intelligence_menu"
 			sequence="30" />
 	</data>

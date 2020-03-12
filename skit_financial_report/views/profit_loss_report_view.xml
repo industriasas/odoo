@@ -42,7 +42,7 @@
 				your needs.</field>
 		</record>
 
-		<menuitem name="Profit and Loss" action="action_profit_loss_report_all"
+		<menuitem name="Estado de Resultados" action="action_profit_loss_report_all"
 			id="menu_action_profit_loss_report_all" parent="account_reports_business_intelligence_menu"
 			sequence="20" />
 	</data>

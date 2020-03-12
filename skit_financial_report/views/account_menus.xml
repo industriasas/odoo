@@ -70,7 +70,7 @@
             <field name="view_mode">tree,form</field>
         </record>
 
-        <menuitem id="cost_dept_account_invoicing_menu" name="Cost Center" parent="account.menu_finance_configuration" action="action_account_cost_center"/>
+        <menuitem id="cost_dept_account_invoicing_menu" name="Centros de Costo" parent="account.menu_finance_configuration" action="action_account_cost_center"/>
 
         <record id="view_form_tf_department" model="ir.ui.view">
             <field name="name">department</field>
@@ -108,7 +108,7 @@
             <field name="view_mode">tree,form</field>
         </record>
 
-        <menuitem id="dept_account_invoicing_menu" name="Department" parent="account.menu_finance_configuration" action="action_account_department"/>
+        <menuitem id="dept_account_invoicing_menu" name="Departmentos" parent="account.menu_finance_configuration" action="action_account_department"/>
 
 
 
