@@ -8,7 +8,7 @@
 			<field name="model">account.balance.sheet</field>
 			<field name="arch" type="xml">
 				<pivot string="Balance Sheet" disable_linking="True">
-					<field name="report_name" type="row" />
+					<field name="account_id" type="row" />
 					<field name="initial_balance" type="measure"/>
 					<field name="debit" type="measure" />
 					<field name="credit" type="measure" />

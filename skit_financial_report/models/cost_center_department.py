@@ -11,5 +11,5 @@ class CostCenter(models.Model):
 class Department(models.Model):
     _name = "tf.department"
 
-    name = fields.Char('Departmento')
+    name = fields.Char('Departamento')
     # cost_center_id = fields.Many2one('tf.cost.center')

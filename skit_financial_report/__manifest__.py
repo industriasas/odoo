@@ -13,6 +13,7 @@
 #     'images': ['images/main_screenshot.png'],
     'depends': ['account','skit_financial_form'],
     'data': [
+            'views/report_wizard.xml',
             'views/account_menus.xml',
             'views/profit_loss_report_view.xml',
             'views/balance_sheet_report_view.xml',
