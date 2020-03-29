@@ -8,7 +8,7 @@
     'description': """  """,
     'website': 'http://www.ahorasoft.com/',
     'license': 'Other proprietary',
-    'depends': ['account_accountant', 'account_reports','skit_financial_report'],
+    'depends': ['account_accountant', 'account_reports','skit_financial_report','l10n_mx_reports'],
     'data': [
         'data/data.xml',
         'views/assets.xml',
