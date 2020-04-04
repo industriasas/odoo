@@ -2,7 +2,7 @@
 
 {
     'name': 'Ahorasoft Quick Accounting Informations',
-    'version': '1.0',
+    'version': '1.1',
     'summary': 'View and create reports',
     'category': 'Accounting/Accounting',
     'description': """  """,
