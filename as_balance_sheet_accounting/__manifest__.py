@@ -2,13 +2,13 @@
 
 {
     'name': 'Ahorasoft Quick Accounting Informations',
-    'version': '1.1',
+    'version': '1.0',
     'summary': 'View and create reports',
     'category': 'Accounting/Accounting',
     'description': """  """,
     'website': 'http://www.ahorasoft.com/',
     'license': 'Other proprietary',
-    'depends': ['account_accountant', 'account_reports','skit_financial_report','l10n_mx_reports'],
+    'depends': ['account_accountant', 'account_reports','skit_financial_report', 'l10n_mx_reports'],
     'data': [
         'data/data.xml',
         'views/assets.xml',

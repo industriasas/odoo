@@ -121,3 +121,37 @@ class ReportTrialBalanceReport(models.AbstractModel):
             })
             lines.extend(childs)
         return lines
+
+    def _get_cols(self, initial_balances, account, comparison_table, grouped_accounts):
+        cols = [initial_balances.get(account, 0.0)]
+        total_periods = 0
+        for period in range(len(comparison_table)):
+            amount = grouped_accounts[account][period]['balance']
+            total_periods += amount
+            cols += [grouped_accounts[account][period]['debit'],
+                     grouped_accounts[account][period]['credit']]
+        cols += [initial_balances.get(account, 0.0) + total_periods]
+
+        # to compute initial balance
+
+        self.env.cr.execute("select sum(debit) as debit, sum(credit) as credit \
+                                         from account_move_line \
+                                         where date < \' " + str(
+            comparison_table[0]['date_from']) + " \' and account_id=%s " % (account.id))
+        ml_id = self.env.cr.dictfetchall()
+        cols[0] = 0
+        if ml_id:
+            ml_id = ml_id[0]
+            # for ml in ml_id:
+            debit = 0
+            credit = 0
+            if ml_id.get('debit'):
+                debit = ml_id.get('debit')
+            if ml_id.get('credit'):
+                credit = ml_id.get('credit')
+            if debit or credit:
+                cols[0] = debit - credit
+
+        # end
+
+        return cols
