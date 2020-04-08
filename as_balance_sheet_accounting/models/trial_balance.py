@@ -5,6 +5,9 @@ from odoo import models, api, _, fields, tools
 from odoo.exceptions import UserError
 from odoo.tools.safe_eval import safe_eval
 from odoo.tools.xml_utils import _check_with_xsd
+import logging
+_logger = logging.getLogger(__name__)
+
 
 class ReportTrialBalanceReport(models.AbstractModel):
     _inherit = "l10n_mx.trial.report"
@@ -122,7 +125,48 @@ class ReportTrialBalanceReport(models.AbstractModel):
             lines.extend(childs)
         return lines
 
-    def _get_cols(self, initial_balances, account, comparison_table, grouped_accounts):
+
+    def _get_lines_fourth_level(self, accounts, grouped_accounts, initial_balances, options, comparison_table):
+        lines = []
+        company_id = self.env.context.get('company_id') or self.env.company
+        is_zero = company_id.currency_id.is_zero
+        for account in accounts:
+            # skip accounts with all periods = 0 (debit and credit) and no initial balance
+            if not options.get('coa_only'):
+                non_zero = False
+                for period in range(len(comparison_table)):
+                    if account in grouped_accounts and (
+                        not is_zero(initial_balances.get(account, 0)) or
+                        not is_zero(grouped_accounts[account][period]['debit']) or
+                        not is_zero(grouped_accounts[account][period]['credit'])
+                    ):
+                        non_zero = True
+                        break
+                if not non_zero:
+                    continue
+            name = account.code + " " + account.name
+            name = name[:63] + "..." if len(name) > 65 else name
+            tag = account.tag_ids.filtered(lambda r: r.color == 4)
+            if len(tag) > 1:
+                raise UserError(_(
+                    'The account %s is incorrectly configured. Only one tag is allowed.'
+                ) % account.name)
+            nature = dict(tag.fields_get()['nature']['selection']).get(tag.nature, '')
+            cols = [{'name': nature}]
+            if not options.get('coa_only'):
+                self = self.with_context(tf_options=options)
+                cols = self._get_cols(initial_balances, account, comparison_table, grouped_accounts, options)
+            lines.append({
+                'id': account.id,
+                'parent_id': 'level_two_%s' % tag.id,
+                'name': name,
+                'level': 4,
+                'columns': cols,
+                'caret_options': 'account.account',
+            })
+        return lines
+
+    def _get_cols(self, initial_balances, account, comparison_table, grouped_accounts, options=None):
         cols = [initial_balances.get(account, 0.0)]
         total_periods = 0
         for period in range(len(comparison_table)):
@@ -132,26 +176,45 @@ class ReportTrialBalanceReport(models.AbstractModel):
                      grouped_accounts[account][period]['credit']]
         cols += [initial_balances.get(account, 0.0) + total_periods]
 
-        # to compute initial balance
+        cols[0] = 0
+        compare_sql_string = "account_id=%s" % account.id
 
+        if options and options.get('v_departments'):
+            count = 1
+            arg_code_string = ""
+            for tmp in options['v_departments']:
+                if count == 1:
+                    arg_code_string += " and department_id=%s" % str(tmp)
+                else:
+                    arg_code_string += " or department_id=%s" % str(tmp)
+                count += 1
+            compare_sql_string += arg_code_string
+        if options and options.get('v_cost_centers'):
+            count = 1
+            arg_code_string = ""
+            for tmp in options['v_cost_centers']:
+                if count == 1:
+                    arg_code_string += " and cost_center_id=%s" % str(tmp)
+                else:
+                    arg_code_string += " or cost_center_id=%s" % str(tmp)
+                count += 1
+            compare_sql_string += arg_code_string
+
+        compare_date = comparison_table[0]['date_from']
         self.env.cr.execute("select sum(debit) as debit, sum(credit) as credit \
                                          from account_move_line \
-                                         where date < \' " + str(
-            comparison_table[0]['date_from']) + " \' and account_id=%s " % (account.id))
+                                         where " + compare_sql_string + " and date < \' " + str(compare_date) + " \'")
         ml_id = self.env.cr.dictfetchall()
-        cols[0] = 0
+        # ml_id = self.env['account.move.line'].search([('account_id', '=', bal['account_id']), ('date', '<', str(compare_date))])
         if ml_id:
-            ml_id = ml_id[0]
-            # for ml in ml_id:
+            ml = ml_id[0]
             debit = 0
             credit = 0
-            if ml_id.get('debit'):
-                debit = ml_id.get('debit')
-            if ml_id.get('credit'):
-                credit = ml_id.get('credit')
+            if ml.get('debit'):
+                debit = ml.get('debit')
+            if ml.get('credit'):
+                credit = ml.get('credit')
             if debit or credit:
                 cols[0] = debit - credit
-
-        # end
 
         return cols
