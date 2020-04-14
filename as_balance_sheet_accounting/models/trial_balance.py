@@ -66,6 +66,48 @@ class ReportTrialBalanceReport(models.AbstractModel):
         return domain
 
     @api.model
+    def _get_lines(self, options, line_id=None):
+        # Create new options with 'unfold_all' to compute the initial balances.
+        # Then, the '_do_query' will compute all sums/unaffected earnings/initial balances for all comparisons.
+        new_options = options.copy()
+        new_options['unfold_all'] = True
+        options_list = self._get_options_periods_list(new_options)
+        accounts_results, taxes_results = self.env['account.general.ledger']._do_query(options_list, fetch_lines=False)
+
+        grouped_accounts = {}
+        initial_balances = {}
+        comparison_table = [options.get('date')]
+        comparison_table += options.get('comparison') and options['comparison'].get('periods') or []
+        for account, periods_results in accounts_results:
+            grouped_accounts.setdefault(account, [])
+            for i, res in enumerate(periods_results):
+                if i == 0:
+                    initial_balances[account] = res.get('initial_balance', {}).get('balance', 0.0)
+
+                domain_cd = []
+                if options.get('v_cost_centers'):
+                    domain_cd += self._get_options_v_cost_center_domain(options)
+                if options.get('v_departments'):
+                    domain_cd += self._get_options_v_department_domain(options)
+
+                if domain_cd:
+                    domain_cd.append(('account_id', '=', account.id))
+                    tf_acc_mv_line_ids = [x for x in self.env['account.move.line'].search(domain_cd)]
+                    grouped_accounts[account].append({
+                        'balance': res.get('sum', {}).get('balance', 0.0),
+                        'debit': sum(x.debit for x in tf_acc_mv_line_ids),
+                        'credit': sum(x.credit for x in tf_acc_mv_line_ids),
+                    })
+                else:
+                    grouped_accounts[account].append({
+                        'balance': res.get('sum', {}).get('balance', 0.0),
+                        'debit': res.get('sum', {}).get('debit', 0.0),
+                        'credit': res.get('sum', {}).get('credit', 0.0),
+                    })
+
+        return self._post_process(grouped_accounts, initial_balances, options, comparison_table)
+
+    @api.model
     def _get_lines_third_level(self, line, grouped_accounts, initial_balances,
                                options, comparison_table):
         """Return list of accounts found in the third level"""
@@ -177,44 +219,53 @@ class ReportTrialBalanceReport(models.AbstractModel):
         cols += [initial_balances.get(account, 0.0) + total_periods]
 
         cols[0] = 0
-        compare_sql_string = "account_id=%s" % account.id
+        # compare_sql_string = "account_id=%s" % account.id
+        #
+        # if options and options.get('v_departments'):
+        #     count = 1
+        #     arg_code_string = ""
+        #     for tmp in options['v_departments']:
+        #         if count == 1:
+        #             arg_code_string += " and department_id=%s" % str(tmp)
+        #         else:
+        #             arg_code_string += " or department_id=%s" % str(tmp)
+        #         count += 1
+        #     compare_sql_string += arg_code_string
+        # if options and options.get('v_cost_centers'):
+        #     count = 1
+        #     arg_code_string = ""
+        #     for tmp in options['v_cost_centers']:
+        #         if count == 1:
+        #             arg_code_string += " and cost_center_id=%s" % str(tmp)
+        #         else:
+        #             arg_code_string += " or cost_center_id=%s" % str(tmp)
+        #         count += 1
+        #     compare_sql_string += arg_code_string
+        #
+        # compare_date = comparison_table[0]['date_from']
+        # self.env.cr.execute("select sum(debit) as debit, sum(credit) as credit \
+        #                                  from account_move_line \
+        #                                  where " + compare_sql_string + " and date < \' " + str(compare_date) + " \'")
+        # ml_id = self.env.cr.dictfetchall()
+        # # ml_id = self.env['account.move.line'].search([('account_id', '=', bal['account_id']), ('date', '<', str(compare_date))])
+        # if ml_id:
+        #     ml = ml_id[0]
+        #     debit = 0
+        #     credit = 0
+        #     if ml.get('debit'):
+        #         debit = ml.get('debit')
+        #     if ml.get('credit'):
+        #         credit = ml.get('credit')
+        #     if debit or credit:
+        #         cols[0] = debit - credit
 
-        if options and options.get('v_departments'):
-            count = 1
-            arg_code_string = ""
-            for tmp in options['v_departments']:
-                if count == 1:
-                    arg_code_string += " and department_id=%s" % str(tmp)
-                else:
-                    arg_code_string += " or department_id=%s" % str(tmp)
-                count += 1
-            compare_sql_string += arg_code_string
-        if options and options.get('v_cost_centers'):
-            count = 1
-            arg_code_string = ""
-            for tmp in options['v_cost_centers']:
-                if count == 1:
-                    arg_code_string += " and cost_center_id=%s" % str(tmp)
-                else:
-                    arg_code_string += " or cost_center_id=%s" % str(tmp)
-                count += 1
-            compare_sql_string += arg_code_string
+        domain_cd = [('account_id', '=', account.id), ('date', '<', comparison_table[0]['date_from'])]
+        if options.get('v_cost_centers'):
+            domain_cd += self._get_options_v_cost_center_domain(options)
+        if options.get('v_departments'):
+            domain_cd += self._get_options_v_department_domain(options)
 
-        compare_date = comparison_table[0]['date_from']
-        self.env.cr.execute("select sum(debit) as debit, sum(credit) as credit \
-                                         from account_move_line \
-                                         where " + compare_sql_string + " and date < \' " + str(compare_date) + " \'")
-        ml_id = self.env.cr.dictfetchall()
-        # ml_id = self.env['account.move.line'].search([('account_id', '=', bal['account_id']), ('date', '<', str(compare_date))])
-        if ml_id:
-            ml = ml_id[0]
-            debit = 0
-            credit = 0
-            if ml.get('debit'):
-                debit = ml.get('debit')
-            if ml.get('credit'):
-                credit = ml.get('credit')
-            if debit or credit:
-                cols[0] = debit - credit
+        tf_acc_mv_line_ids = [x for x in self.env['account.move.line'].search(domain_cd)]
+        cols[0] = sum(x.debit for x in tf_acc_mv_line_ids) - sum(x.credit for x in tf_acc_mv_line_ids)
 
         return cols
