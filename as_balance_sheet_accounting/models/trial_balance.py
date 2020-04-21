@@ -92,6 +92,8 @@ class ReportTrialBalanceReport(models.AbstractModel):
 
                 if domain_cd:
                     domain_cd.append(('account_id', '=', account.id))
+                    domain_cd.append(('date', '>', comparison_table[0]['date_from']))
+                    domain_cd.append(('date', '<', comparison_table[0]['date_to']))
                     tf_acc_mv_line_ids = [x for x in self.env['account.move.line'].search(domain_cd)]
                     grouped_accounts[account].append({
                         'balance': res.get('sum', {}).get('balance', 0.0),
