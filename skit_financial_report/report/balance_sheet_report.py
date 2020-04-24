@@ -19,6 +19,7 @@ class BalanceSheetReport(models.Model):
     balance = fields.Monetary(compute='_store_balance', store=True,
                              currency_field='currency_id')
     currency_id = fields.Many2one('res.currency', string='Currency')
+    account_code = fields.Char(string="Por Codigo Cuenta", compute="_store_balance_code", store=True)
     account_id = fields.Many2one('account.account', string='Account')
     analytic_account_id = fields.Many2one('account.analytic.account', string='Analytic Account', groups="analytic.group_analytic_accounting")
     move_id = fields.Many2one('account.move', string='Journal Entry')
@@ -34,6 +35,10 @@ class BalanceSheetReport(models.Model):
     cost_center_id = fields.Many2one('tf.cost.center', 'Cost Center')
     department_id = fields.Many2one('tf.department', string='Departments')
     initial_balance = fields.Float('Initial Balance')
+
+    def _store_balance_code(self):
+        if self.account_id:
+            self.account_code= self.account_id.code
 
     def _compute_report_balance(self, reports, report_name):
         ''' '''
@@ -55,10 +60,12 @@ class BalanceSheetReport(models.Model):
                     ml.company_id ,m.currency_id,ml.id as id, ml.move_id, ml.name,\
                     ml.date, ml.product_id,ml.partner_id,ml.account_id, ml.analytic_account_id,\
                     COALESCE((credit), 0) as credit,\
-                    COALESCE((debit),0) - COALESCE((credit), 0) as balance,\
+                    COALESCE((debit),0) - COALESCE((credit), 0) as balance,CONCAT(aa.code,' ',aa.name) as account_code,\
                     CASE WHEN    ml.date < \'" + str(date(date.today().year, 1, 1)) + "\'  THEN COALESCE((debit),0) - COALESCE((credit), 0) ELSE 0 END AS initial_balance,\
                     COALESCE((debit), 0) as debit, ml.cost_center_id, ml.department_id from account_move m inner join \
-                    account_move_line ml on m.id = ml.move_id where ml.account_id \
+                    account_move_line ml on m.id = ml.move_id \
+                    inner join account_account aa on aa.id = ml.account_id\
+                    where ml.account_id \
                     in ( "+report.account_ids+")"
                 else:        
                     subquery = " SELECT '"+(" "+report.name if report.name == "Balance Sheet" else report.name)+"' as report_name,0 as journal_id, \
@@ -86,10 +93,12 @@ class BalanceSheetReport(models.Model):
                     ml.company_id,m.currency_id,ml.id as id, ml.move_id, ml.name,\
                     ml.date, ml.product_id,ml.partner_id,ml.account_id,ml.analytic_account_id, \
                     COALESCE((credit), 0) as credit,\
-                    COALESCE((debit),0) - COALESCE((credit), 0) as balance,\
+                    COALESCE((debit),0) - COALESCE((credit), 0) as balance,CONCAT(aa.code,' ',aa.name) as account_code,\
                     CASE WHEN    ml.date < \'" + str(date(date.today().year, 1, 1)) + "\'  THEN COALESCE((debit),0) - COALESCE((credit), 0) ELSE 0 END AS initial_balance,\
                     COALESCE((debit), 0) as debit, ml.cost_center_id, ml.department_id from account_move m  inner join \
-                    account_move_line ml on m.id = ml.move_id where ml.account_id \
+                    account_move_line ml on m.id = ml.move_id \
+                    inner join account_account aa on aa.id = ml.account_id\
+                    where ml.account_id \
                     in ( "+acc_ids+")"                
                 else:        
                     subquery = " SELECT '"+(" "+report.name if report.name == "Balance Sheet" else report.name)+"' as report_name,0 as journal_id, \

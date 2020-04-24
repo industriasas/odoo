@@ -30,6 +30,8 @@ class PLReport(models.Model):
     company_id = fields.Many2one('res.company',
                                  string='Company')
     partner_id = fields.Many2one('res.partner')
+    cost_center_id = fields.Many2one('tf.cost.center', 'Cost Center')
+    department_id = fields.Many2one('tf.department', string='Departments')
 
     def _compute_report_balance(self, reports):
         ''' '''
@@ -48,7 +50,7 @@ class PLReport(models.Model):
                     ml.journal_id,ml.payment_id,ml.quantity,\
                     ml.company_id,m.currency_id,ml.id as id, ml.move_id, ml.name, \
                     ml.date, ml.product_id,ml.partner_id,ml.account_id, ml.analytic_account_id, \
-                    COALESCE((credit), 0) as credit, ((COALESCE((debit),0) - COALESCE((credit), 0)) * "+str(report.sign)+") as balance, COALESCE((debit), 0) as debit \
+                    COALESCE((credit), 0) as credit, ((COALESCE((debit),0) - COALESCE((credit), 0)) * "+str(report.sign)+") as balance, COALESCE((debit), 0) as debit,ml.cost_center_id, ml.department_id \
                     from account_move m \
                     inner join account_move_line ml on m.id = ml.move_id \
                     where ml.account_id in ( "+report.account_ids+")"
@@ -78,7 +80,7 @@ class PLReport(models.Model):
                     ml.journal_id,ml.payment_id,ml.quantity,\
                     ml.company_id,m.currency_id,ml.id as id, ml.move_id, ml.name,\
                     ml.date, ml.product_id,ml.partner_id,ml.account_id, ml.analytic_account_id, \
-                    COALESCE((credit), 0) as credit, ((COALESCE((debit),0) - COALESCE((credit), 0)) * "+str(report.sign)+") as balance, COALESCE((debit), 0) as debit \
+                    COALESCE((credit), 0) as credit, ((COALESCE((debit),0) - COALESCE((credit), 0)) * "+str(report.sign)+") as balance, COALESCE((debit), 0) as debit,ml.cost_center_id, ml.department_id \
                     from account_move m \
                     inner join account_move_line ml on m.id = ml.move_id \
                     where ml.account_id in ( "+acc_ids+")"

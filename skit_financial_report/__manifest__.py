@@ -2,7 +2,7 @@
 
 {
     'name': 'Ahorasoft Pivote Financiero',
-    'version': '1.4',
+    'version': '1.3.1',
     'author': 'Ahorasoft',
     'website': 'http://www.ahorasoft.com',
     'summary': 'Pivote Financiero',

@@ -44,9 +44,9 @@
                             <group>
                                 <field name="name"/>
                             </group>
-                            <!-- <group>
+                            <group>
                                 <field name="department_ids"/>
-                            </group> -->
+                            </group>
                         </group>
                     </sheet>
                 </form>
@@ -82,9 +82,9 @@
                             <group>
                                 <field name="name"/>
                             </group>
-                            <!-- <group>
+                            <group>
                                 <field name="cost_center_id"/>
-                            </group> -->
+                            </group>
                         </group>
                     </sheet>
                 </form>
@@ -97,7 +97,7 @@
             <field name="arch" type="xml">
                 <tree string="Department">
                     <field name="name"/>
-                    <!-- <field name="cost_center_id"/> -->
+                    <field name="cost_center_id"/>
                 </tree>
             </field>
         </record>

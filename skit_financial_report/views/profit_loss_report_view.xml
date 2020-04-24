@@ -7,11 +7,13 @@
 			<field name="name">account.profit.loss.pivot</field>
 			<field name="model">account.profit.loss</field>
 			<field name="arch" type="xml">
-				<pivot string="Profit and Loss" disable_linking="True">
+				<pivot string="Pivot Perdidas y Ganancias" disable_linking="True">
 					<field name="report_name" type="row" />
 					<field name="debit" type="measure" />
 					<field name="credit" type="measure" />
 					<field name="balance" type="measure" />
+					<field name="cost_center_id" type="col"/>
+					<field name="department_id" type="col"/>
 				</pivot>
 			</field>
 		</record>
@@ -20,7 +22,7 @@
 			<field name="name">account.profit.loss.graph</field>
 			<field name="model">account.profit.loss</field>
 			<field name="arch" type="xml">
-				<graph string="Profit and Loss">
+				<graph string="Pivot Perdidas y Ganancias">
 					<field name="report_name" type="row" />
 					<field name="debit" type="measure" />
 					<field name="credit" type="measure" />
@@ -30,7 +32,7 @@
 		</record>
 
 		<record id="action_profit_loss_report_all" model="ir.actions.act_window">
-			<field name="name">Profit and Loss</field>
+			<field name="name">Pivot Perdidas y Ganancias</field>
 			<field name="res_model">account.profit.loss</field>
 	        <field name="view_mode">pivot,graph</field>
 			<field name="context">{'search_default_current':1,
@@ -42,7 +44,7 @@
 				your needs.</field>
 		</record>
 
-		<menuitem name="Estado de Resultados" action="action_profit_loss_report_all"
+		<menuitem name="PIVOT Perdidas y Ganancias" action="action_profit_loss_report_all"
 			id="menu_action_profit_loss_report_all" parent="account_reports_business_intelligence_menu"
 			sequence="20" />
 	</data>
